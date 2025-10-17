@@ -15,10 +15,10 @@
 // Multiply the fragment’s diffuse color by the accumulated light contribution.
 // Return the final color, ensuring that the alpha component is set appropriately (typically to 1).
 
-@group(${0}) @binding(1) var<storage, read> lightSet: LightSet;
+@group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
 
-@group(${2}) @binding(0) var diffuseTex: texture_2d<f32>;
-@group(${2}) @binding(1) var diffuseTexSampler: sampler;
+@group(${bindGroup_material}) @binding(0) var diffuseTex: texture_2d<f32>;
+@group(${bindGroup_material}) @binding(1) var diffuseTexSampler: sampler;
 
 struct FragmentInput
 {
@@ -43,6 +43,5 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     // }
 
     // var finalColor = diffuseColor.rgb * totalLightContrib;
-    var depth = fragPos.z / fragPos.w;
-    return vec4(depth, depth, depth, 1);
+    return vec4(0.0, 0.0, 1.0, 1);
 }
