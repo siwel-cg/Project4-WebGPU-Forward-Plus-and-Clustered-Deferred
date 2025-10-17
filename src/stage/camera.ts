@@ -42,6 +42,8 @@ export class Camera {
         //
         // note that you can add more variables (e.g. inverse proj matrix) to this buffer in later parts of the assignment
 
+        // RANDOM TEST
+
         this.uniformsBuffer = device.createBuffer({
             label: "uniforms",
             size: this.uniforms.buffer.byteLength,
