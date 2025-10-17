@@ -1,7 +1,7 @@
-@group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
+@group(${0}) @binding(1) var<storage, read> lightSet: LightSet;
 
-@group(${bindGroup_material}) @binding(0) var diffuseTex: texture_2d<f32>;
-@group(${bindGroup_material}) @binding(1) var diffuseTexSampler: sampler;
+@group(${2}) @binding(0) var diffuseTex: texture_2d<f32>;
+@group(${2}) @binding(1) var diffuseTexSampler: sampler;
 
 struct FragmentInput
 {
