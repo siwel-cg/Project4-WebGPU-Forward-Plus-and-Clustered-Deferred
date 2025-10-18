@@ -22,26 +22,27 @@
 
 struct FragmentInput
 {
+    @builtin(position) fragCoord: vec4f,
     @location(0) pos: vec3f,
     @location(1) nor: vec3f,
-    @location(2) uv: vec2f
+    @location(2) uv: vec2f,
+    @location(3) nearPlane: f32,
+    @location(4) farPlane: f32
 }
 
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
-    let diffuseColor = textureSample(diffuseTex, diffuseTexSampler, in.uv);
-    if (diffuseColor.a < 0.5f) {
-        discard;
-    }
-
-    // REPLACE THIS WITH FORWARD+ LIGHT CLUSTERS
-    // var totalLightContrib = vec3f(0, 0, 0);
-    // for (var lightIdx = 0u; lightIdx < lightSet.numLights; lightIdx++) {
-    //     let light = lightSet.lights[lightIdx];
-    //     totalLightContrib += calculateLightContrib(light, in.pos, normalize(in.nor));
-    // }
-
-    // var finalColor = diffuseColor.rgb * totalLightContrib;
-    return vec4(0.0, 0.0, 1.0, 1);
+    let n = 0.1;
+    let f = 1000.0;
+    
+    // Method 2: Proper linearization without remapping
+    let d = in.fragCoord.z;
+    let z_ndc = d * 2.0 - 1.0; 
+    let linearDepth = (2.0 * n * f) / (f + n - z_ndc * (f - n));
+    
+    // Scale to visible range
+    let normalized = clamp(linearDepth / 50.0, 0.0, 1.0);
+    
+    return vec4(normalized, normalized, normalized, 1.0);
 }

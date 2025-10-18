@@ -3,7 +3,8 @@
 // TODO-1.3: add a uniform variable here for camera uniforms (of type CameraUniforms)
 // make sure to use ${bindGroup_scene} for the group
 
-@group(${bindGroup_scene}) @binding(0) var<uniform> MVPmat: mat4x4f;
+
+@group(0) @binding(0) var<uniform> uCamera : CameraUniforms;
 
 @group(${bindGroup_model}) @binding(0) var<uniform> modelMat: mat4x4f;
 
@@ -16,10 +17,12 @@ struct VertexInput
 
 struct VertexOutput
 {
-    @builtin(position) fragPos: vec4f,
+    @builtin(position) clipPos: vec4f,
     @location(0) pos: vec3f,
     @location(1) nor: vec3f,
-    @location(2) uv: vec2f
+    @location(2) uv: vec2f,
+    @location(3) nearPlane: f32,
+    @location(4) farPlane: f32
 }
 
 @vertex
@@ -28,9 +31,13 @@ fn main(in: VertexInput) -> VertexOutput
     let modelPos = modelMat * vec4(in.pos, 1);
 
     var out: VertexOutput;
-    out.fragPos = MVPmat * modelPos; // TODO-1.3: replace ??? with the view proj mat from your CameraUniforms uniform variable
+    out.clipPos = uCamera.viewProjMat * modelPos; // TODO-1.3: replace ??? with the view proj mat from your CameraUniforms uniform variable
     out.pos = modelPos.xyz / modelPos.w;
     out.nor = in.nor;
     out.uv = in.uv;
+
+    out.nearPlane = uCamera.nearFar.x;
+    out.farPlane = uCamera.nearFar.y;
+
     return out;
 }

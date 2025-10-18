@@ -1,9 +1,9 @@
-import { Mat4, mat4, Vec3, vec3 } from "wgpu-matrix";
+import { Mat4, mat4, vec2, Vec3, vec3 } from "wgpu-matrix";
 import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer(16 * 4);
+    readonly buffer = new ArrayBuffer(32 * 4);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
@@ -13,7 +13,14 @@ class CameraUniforms {
         }
     }
 
+    private readonly f32 = new Float32Array(this.buffer);
+    set nearFar(nf: Float32Array) {
+        this.f32[17] = nf[0];              // near
+        this.f32[18] = nf[1];              // far
+    } 
+
     // TODO-2: add extra functions to set values needed for light clustering here
+
 }
 
 export class Camera {
@@ -41,8 +48,6 @@ export class Camera {
         // check `lights.ts` for examples of using `device.createBuffer()`
         //
         // note that you can add more variables (e.g. inverse proj matrix) to this buffer in later parts of the assignment
-
-        // RANDOM TEST
 
         this.uniformsBuffer = device.createBuffer({
             label: "uniforms",
@@ -143,6 +148,10 @@ export class Camera {
 
         this.uniforms.viewProjMat = viewProjMat;
 
+
+        const nfPlanes = vec2.create(Camera.nearPlane, Camera.farPlane);
+        this.uniforms.nearFar = nfPlanes;
+        
         // TODO-2: write to extra buffers needed for light clustering here
 
         // TODO-1.1: upload `this.uniforms.buffer` (host side) to `this.uniformsBuffer` (device side)
