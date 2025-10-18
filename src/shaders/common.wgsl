@@ -12,6 +12,13 @@ struct LightSet {
 
 // TODO-2: you may want to create a ClusterSet struct similar to LightSet
 
+struct ClusterSet {
+    minBoud: vec3f,
+    maxBound: vec3f,
+    numLights: u32,
+    lights: array<Light>
+}
+
 struct CameraUniforms {
     // TODO-1.3: add an entry for the view proj mat (of type mat4x4f)
     viewProjMat: mat4x4f,

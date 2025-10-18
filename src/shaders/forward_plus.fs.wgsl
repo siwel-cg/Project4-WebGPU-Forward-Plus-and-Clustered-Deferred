@@ -16,7 +16,7 @@
 // Return the final color, ensuring that the alpha component is set appropriately (typically to 1).
 
 @group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
-@group(${bindGroup_scene}) @binding(2) var depthTex: texture_depth_2d; 
+@group(${bindGroup_scene}) @binding(2) var linearDepthTex: texture_2d<f32>; 
 
 @group(${bindGroup_material}) @binding(0) var diffuseTex: texture_2d<f32>;
 @group(${bindGroup_material}) @binding(1) var diffuseTexSampler: sampler;
@@ -34,20 +34,19 @@ struct FragmentInput
 @fragment
 fn main(in: FragmentInput) -> @location(0) vec4f
 {
-    let n = 0.1;
-    let f = 1000.0;
+    let n = in.nearPlane;
+    let f = in.farPlane;
     
-    // Method 2: Proper linearization without remapping
-    let d = textureLoad(depthTex, vec2i(in.fragCoord.xy), 0);
-    let z_ndc = d * 2.0 - 1.0; 
-    let linearDepth = (2.0 * n * f) / (f + n - z_ndc * (f - n));
-    
-    // Scale to visible range
-    let normalized = clamp(linearDepth / 50.0, 0.0, 1.0);
-    
+    let lin = textureLoad(linearDepthTex, vec2<i32>(i32(in.fragCoord.x), i32(in.fragCoord.y)), 0).r;
+    return vec4(lin, lin, lin, 1.0);
 
+    // let z_ndc = d * 2.0 - 1.0; 
+    // let linearDepth = (2.0 * n * f) / (f + n - z_ndc * (f - n));
     
-    return vec4(normalized, normalized, normalized, 1.0);
+    // // Scale to visible range
+    // let normalized = clamp(linearDepth / 30.0, 0.0, 1.0);
+       
+    // return vec4(normalized, normalized, normalized, 1.0);
     // let depth = textureLoad(depthTex, vec2i(in.fragCoord.xy), 0);
     // return vec4(depth, depth, depth, 1.0);
 }

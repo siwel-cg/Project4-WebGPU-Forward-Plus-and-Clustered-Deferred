@@ -15,6 +15,9 @@ export class ForwardPlusRenderer extends renderer.Renderer {
     depthTexture: GPUTexture;
     depthTextureView: GPUTextureView;
 
+    linearDepthTexture: GPUTexture;
+    linearDepthTextureView: GPUTextureView;
+
     depthPrePassPipeline: GPURenderPipeline;
     pipeline: GPURenderPipeline;
 
@@ -30,11 +33,6 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX,
                     buffer: { type: "uniform"}
-                },
-                {   // LIGHTSET
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    buffer: { type: "read-only-storage"}
                 }
             ]
         });
@@ -56,7 +54,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 { // DEPTH TEXTURE
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: { sampleType: "depth" }
+                    texture: { sampleType: "unfilterable-float" }
                 }
             ]
         });
@@ -70,6 +68,14 @@ export class ForwardPlusRenderer extends renderer.Renderer {
         });
         this.depthTextureView = this.depthTexture.createView();
 
+        // CREATE NEW THING FOR DEPTH BUT LINEAR B)
+        this.linearDepthTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: "r32float",
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC
+        });
+        this.linearDepthTextureView = this.linearDepthTexture.createView();
+
         // BINDS ACTUAL CPU DATA TO THESE GPU BUFFERS
         this.sceneUniformsBindGroupNODEPTH = renderer.device.createBindGroup
         ({
@@ -80,10 +86,6 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 { // CAMERA
                     binding: 0,
                     resource: { buffer: this.camera.uniformsBuffer}
-                },
-                { // LIGHTS
-                    binding: 1,
-                    resource: { buffer: this.lights.lightSetStorageBuffer}
                 }
             ]
         });
@@ -104,7 +106,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 },
                 { // DEPTH
                     binding: 2,
-                    resource: this.depthTextureView
+                    resource: this.linearDepthTextureView 
                 }
             ]
         });
@@ -133,13 +135,30 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 module: renderer.device.createShaderModule({
                     label: "depth prepass frag shader",
                     code: `
+                        struct FragmentInput
+                        {
+                            @builtin(position) fragCoord: vec4f,
+                            @location(3) nearPlane: f32,
+                            @location(4) farPlane: f32
+                        }
+
                         @fragment
-                        fn main() {
-                            // Empty - we only want depth writes
+                        fn main(in: FragmentInput) -> @location(0) f32
+                        {
+                            let n = in.nearPlane;
+                            let f = in.farPlane;
+                            
+                            let d = in.fragCoord.z;
+                            let z_ndc = d * 2.0 - 1.0; 
+                            let linearDepth = (2.0 * n * f) / (f + n - z_ndc * (f - n));
+                            
+                            let linear = clamp(linearDepth / 30.0, 0.0, 1.0);
+                            
+                            return linear;
                         }
                     `
                 }),
-                targets: []  // No color output!
+                targets: [{format: "r32float"}]
             }
         });
 
@@ -184,14 +203,17 @@ export class ForwardPlusRenderer extends renderer.Renderer {
         // - run the clustering compute shader
         // - run the main rendering pass, using the computed clusters for efficient lighting
 
-        // THIS IS CURRENTLY JUST NAIVE DRAW (NO FORWARD +)
+
+        // RENDER DEPTH PRE PASS FOR COMPUTE SHADER
         const encoder = renderer.device.createCommandEncoder();
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
-
-
         const depthPrePass = encoder.beginRenderPass({
             label: "depth pre-pass",
-            colorAttachments: [],  // No color attachments
+            colorAttachments: [{
+                view: this.linearDepthTextureView,
+                loadOp: "clear", storeOp: "store",
+                clearValue: [0,0,0,0],
+            }],
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
@@ -212,9 +234,13 @@ export class ForwardPlusRenderer extends renderer.Renderer {
             depthPrePass.setIndexBuffer(primitive.indexBuffer, 'uint32');
             depthPrePass.drawIndexed(primitive.numIndices);
         });
-        
         depthPrePass.end();
 
+        // TODO: RUN COMPUTE SHADER HERE OR SOMETHING TO GET THE CLUSTERS
+
+
+
+        // FINAL OUTPUT WHICH WILL USE CLUSTERS FOR LIGHTING (NEEDS UPDATING)
         const renderPass = encoder.beginRenderPass({
             label: "naive render pass",
             colorAttachments: [

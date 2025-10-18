@@ -15,8 +15,8 @@ class CameraUniforms {
 
     private readonly f32 = new Float32Array(this.buffer);
     set nearFar(nf: Float32Array) {
-        this.f32[17] = nf[0];              // near
-        this.f32[18] = nf[1];              // far
+        this.f32[16] = nf[0];              // near
+        this.f32[17] = nf[1];              // far
     } 
 
     // TODO-2: add extra functions to set values needed for light clustering here
