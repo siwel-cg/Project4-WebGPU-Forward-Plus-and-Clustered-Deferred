@@ -261,7 +261,13 @@ export class Lights {
         const pass = encoder.beginComputePass({ label: "cluster stub" });
         pass.setPipeline(this.clusterComputePipeline);
         pass.setBindGroup(0, this.clusterBindGroup);
-        pass.dispatchWorkgroups(tileX, tileY, 1); // 1 WG per tile; loops Z inside
+
+        const wgx = 4, wgy = 4, wgz = 4;
+        const gx = Math.ceil(tileX / wgx);
+        const gy = Math.ceil(tileY / wgy);
+        const gz = Math.ceil(this.zSlice / wgz);
+
+        pass.dispatchWorkgroups(gx, gy, gz);
         pass.end();
     }
 

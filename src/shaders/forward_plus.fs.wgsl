@@ -15,13 +15,13 @@
 // Multiply the fragment’s diffuse color by the accumulated light contribution.
 // Return the final color, ensuring that the alpha component is set appropriately (typically to 1).
 @group(0) @binding(0) var<uniform> uCamera : CameraUniforms;
-@group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
-@group(${bindGroup_scene}) @binding(3) var<uniform> params: ClusterParams;
-@group(${bindGroup_scene}) @binding(4) var<storage, read_write> clusterCounts: array<u32>;
-@group(${bindGroup_scene}) @binding(5) var<storage, read_write> clusterIdx: array<u32>;
+@group(0) @binding(1) var<storage, read> lightSet: LightSet;
+@group(0) @binding(3) var<uniform> params: ClusterParams;
+@group(0) @binding(4) var<storage, read_write> clusterCounts: array<u32>;
+@group(0) @binding(5) var<storage, read_write> clusterIdx: array<u32>;
 
-@group(${bindGroup_material}) @binding(0) var diffuseTex: texture_2d<f32>;
-@group(${bindGroup_material}) @binding(1) var diffuseTexSampler: sampler;
+@group(2) @binding(0) var diffuseTex: texture_2d<f32>;
+@group(2) @binding(1) var diffuseTexSampler: sampler;
 
 struct FragmentInput
 {

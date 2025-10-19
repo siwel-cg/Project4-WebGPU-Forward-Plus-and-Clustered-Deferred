@@ -1,5 +1,5 @@
-@group(${bindGroup_scene}) @binding(0) var<storage, read_write> lightSet: LightSet;
-@group(${bindGroup_scene}) @binding(1) var<uniform> time: f32;
+@group(0) @binding(0) var<storage, read_write> lightSet: LightSet;
+@group(0) @binding(1) var<uniform> time: f32;
 
 // https://gist.github.com/munrocket/236ed5ba7e409b8bdf1ff6eca5dcdc39
 // MIT License. © Stefan Gustavson, Munrocket

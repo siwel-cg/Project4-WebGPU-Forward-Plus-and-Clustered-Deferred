@@ -5,8 +5,7 @@
 
 
 @group(0) @binding(0) var<uniform> uCamera : CameraUniforms;
-
-@group(${bindGroup_model}) @binding(0) var<uniform> modelMat: mat4x4f;
+@group(1) @binding(0) var<uniform> modelMat: mat4x4f;
 
 struct VertexInput
 {
