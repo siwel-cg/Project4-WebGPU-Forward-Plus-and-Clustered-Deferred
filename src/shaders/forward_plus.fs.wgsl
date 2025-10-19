@@ -34,7 +34,6 @@ struct FragmentInput
 }
 
 fn hash3(u: u32) -> vec3f {
-  // quick bit-mix into [0,1]
   let x = f32(((u * 1664525u) ^ 1013904223u) & 1023u) / 1023.0;
   let y = f32(((u * 22695477u) ^ 1u)        & 1023u) / 1023.0;
   let z = f32(((u * 1103515245u) ^ 12345u)  & 1023u) / 1023.0;
@@ -67,7 +66,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     // let tileX = u32(in.fragCoord.x) / params.tileSize.x;
     // let tileY = u32(in.fragCoord.y) / params.tileSize.y;
 
-    // let dwow = in.fragCoord.z;
+    //let dwow = in.fragCoord.z;
     // let z_ndc = dwow * 2.0 - 1.0; 
     // let linearDepth = (2.0 * n * f) / (f + n - z_ndc * (f - n));
     // let linear = clamp(linearDepth / 100.0, 0.0, 1.0);

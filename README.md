@@ -11,9 +11,8 @@ WebGL Forward+ and Clustered Deferred Shading
 
 [LIVE DEMO:](https://siwel-cg.github.io/Project4-WebGPU-Forward-Plus-and-Clustered-Deferred/)
 
-
 ## A Quick Note
-If you take a look at the live demo, you will notice there are some things missing. I wasn't able to implement all the features, and some of the ones I was able to implement leave lots of room for improvement. However, let just look at some of the things I did do (as of 10/18/25), since in my implementation, they are more visually interesting than a plane black screen.
+If you take a look at the live demo, you will notice there are some things missing. I wasn't able to implement all the features, and some of the ones I was able to implement leave lots of room for improvement. I am going to keep working on this and have a full analysis once everything has been implemented, but for now, you are stuck with jank. However, let just look at some of the things I did do (as of 10/18/25), since in my implementation, they are more visually interesting than a plane black screen.
 
 # Overview
 First off, what was I trying to do. As scenes become more and more complex, we need to develop new methods for handaling the increased amounts of calculations needed to actually render these complex scene. One such complexity is the number of lights in a scene. When rasterizing, for some fragment and the object it hits, we need to calculate what that pixel is going to look like, which usually involves some sort of lighting calculation. Simply, test each light for it's contribution to the lighting of that fragment and we get a nice result. The only problem is, as the number of lights increases, this naive test becomes much too slow. The solution, pre-process lights into clusters so that we only need to check the lights within a given fragment's cluster. This is the core idea behind the Forward+ approach. 
@@ -33,7 +32,7 @@ If you play around with the live demo, you might notice that Forward+ doesn't re
 The reason I need to set the radius to 20 has to do with the depth some how. I tried all sorts of ways to linearize the fragment depth to get a nice 0 to 1 depth map, but nothing was working. The best I could do was a hack where you linearize based on a hard coded scene max depth. My compute shader still uses the old depth, which has values only within a small radius around the camera, and thus only light within that region get detected I think. Still not 100% sure, but that is my current guess. 
 
 # Run Time
-My Forward+ although it's getting there, is no where near what it needs to be. As such, I don't really have anything to test. The only way for you to be able to see anything is if you turn up the light radius a bunch, but then, as mentioned, this is basically just naive. I could do different cluster sized and configurations, but the results aren't that significant. You can't see any real performance differences. 
+My Forward+ although it's getting there, is no where near what it needs to be. As such, I don't really have anything to test. The only way for you to be able to see anything is if you turn up the light radius a bunch, but then, as mentioned, this is basically just naive. I could do different cluster sized and configurations, but the results weren't that significant. I couldn't really see any performance differences. Part of this could be my laptop not being that strong of a machine, but overall, knowing the performance results of a buggy implementation I am going to fix didn't seem relevent.
 
 ### Credits
 
@@ -44,3 +43,4 @@ My Forward+ although it's getting there, is no where near what it needs to be. A
 - [wgpu-matrix](https://github.com/greggman/wgpu-matrix)
 - [Coordinate-Systems](https://learnopengl.com/Getting-started/Coordinate-Systems)
 - [depth](https://matthewmacfarquhar.medium.com/webgpu-rendering-part-3-depth-testing-39d4c9ae5bbd)
+- CIS 5600 SLIDES 

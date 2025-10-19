@@ -28,90 +28,91 @@
 @group(0) @binding(3) var<storage, read_write> clusterIndices : array<u32>;
 @group(0) @binding(4) var<uniform> uCamera : CameraUniforms;
 
-fn clusterAABB_view_log(ix:u32, iy:u32, d0:f32, d1:f32) -> vec4<f32> {
+fn clusterAABB_view_log(idxX:u32, idxY:u32, d0:f32, d1:f32) -> vec4<f32> {
     let tilesX = (params.screenSize.x + params.tileSize.x - 1u) / params.tileSize.x;
     let tilesY = (params.screenSize.y + params.tileSize.y - 1u) / params.tileSize.y;
-    let x0 = 2.0 * f32(ix) / f32(tilesX) - 1.0;
-    let x1 = 2.0 * f32(ix + 1u) / f32(tilesX) - 1.0;
-    let y0 = 2.0 * f32(iy) / f32(tilesY) - 1.0;
-    let y1 = 2.0 * f32(iy + 1u) / f32(tilesY) - 1.0;
 
-    // projection scales
-    let tanY   = tan(0.5 * params.fovYRadians);
+    let xMin = 2.0 * (f32(idxX) / f32(tilesX)) - 1.0;
+    let xMax = 2.0 * (f32(idxX + 1u) / f32(tilesX)) - 1.0;
+    let yMin = 2.0 * (f32(idxY) / f32(tilesY)) - 1.0;
+    let yMax = 2.0 * (f32(idxY + 1u) / f32(tilesY)) - 1.0;
+
+    let tanY = tan(0.5 * params.fovYRadians);
     let aspect = f32(params.screenSize.x) / f32(params.screenSize.y);
     let Sx = aspect * tanY;
     let Sy = tanY;
 
-    // candidates at (d0,d1) × (x0/x1 or y0/y1)
-    let X = array<f32,4>( d0*x0*Sx, d0*x1*Sx, d1*x0*Sx, d1*x1*Sx );
-    let Y = array<f32,4>( d0*y0*Sy, d0*y1*Sy, d1*y0*Sy, d1*y1*Sy );
+    let viewX = array<f32,4>( d0*xMin*Sx, d0*xMax*Sx, d1*xMin*Sx, d1*xMax*Sx );
+    let viewY = array<f32,4>( d0*yMin*Sy, d0*yMax*Sy, d1*yMin*Sy, d1*yMax*Sy );
 
-    var xmin = X[0]; var xmax = X[0];
-    var ymin = Y[0]; var ymax = Y[0];
-    for (var i=1u; i<4u; i++) {
-        xmin = min(xmin, X[i]); xmax = max(xmax, X[i]);
-        ymin = min(ymin, Y[i]); ymax = max(ymax, Y[i]);
+    var xmin = viewX[0];
+    var xmax = viewX[0];
+    var ymin = viewY[0];
+    var ymax = viewY[0];
+
+    for (var i = 1u; i < 4u; i++) {
+        xmin = min(xmin, viewX[i]);
+        xmax = max(xmax, viewX[i]);
+        ymin = min(ymin, viewY[i]);
+        ymax = max(ymax, viewY[i]);
     }
     return vec4<f32>(xmin, xmax, ymin, ymax);
 }
 
-fn sphereAABB_intersect(C:vec3<f32>, R:f32, aabbXY:vec4<f32>, zmin:f32, zmax:f32) -> bool {
-    let qx = clamp(C.x, aabbXY.x, aabbXY.y);
-    let qy = clamp(C.y, aabbXY.z, aabbXY.w);
-    let qz = clamp(C.z, zmin, zmax);
-    let dx = qx - C.x; let dy = qy - C.y; let dz = qz - C.z;
-    return (dx*dx + dy*dy + dz*dz) <= (R*R);
+fn sphereAABB_intersect(pos:vec3<f32>, rad:f32, aabbXY:vec4<f32>, zmin:f32, zmax:f32) -> bool {
+    let qx = clamp(pos.x, aabbXY.x, aabbXY.y);
+    let qy = clamp(pos.y, aabbXY.z, aabbXY.w);
+    let qz = clamp(pos.z, zmin, zmax);
+    let dx = qx - pos.x;
+    let dy = qy - pos.y;
+    let dz = qz - pos.z;
+    return (dx*dx + dy*dy + dz*dz) <= (rad*rad);
 }
 
 @compute
 @workgroup_size(4, 4, 4) 
-fn main(@builtin(global_invocation_id) gid : vec3u) {
+fn main(@builtin(global_invocation_id) globalIdx : vec3u) {
+    let n  = params.near;
+    let f  = params.far;
 
     // cluster dims
     let tileX = (params.screenSize.x + params.tileSize.x - 1u) / params.tileSize.x;
     let tileY = (params.screenSize.y + params.tileSize.y - 1u) / params.tileSize.y;
 
-    // bounds check for 3D grid
-    if (gid.x >= tileX || gid.y >= tileY || gid.z >= params.zSlices) { return; }
+    if (globalIdx.x >= tileX || globalIdx.y >= tileY || globalIdx.z >= params.zSlices) {
+        return;
+    }
 
-    // decode (ix,iy,iz) is now just gid.xyz
-    let idxX = gid.x;
-    let idxY = gid.y;
-    let idxZ = gid.z;
+    let idxX = globalIdx.x;
+    let idxY = globalIdx.y;
+    let idxZ = globalIdx.z;
 
-    // --- log slice depths [d0,d1] (positive depths) ---
-    let n  = params.near;
-    let f  = params.far;
     let r  = f / n;
     let zN = f32(params.zSlices);
     let t0 = f32(idxZ) / zN;
     let t1 = f32(idxZ + 1u) / zN;
-    let d0 = n * pow(r, t0);   // near side of this slice
-    let d1 = n * pow(r, t1);   // far  side of this slice
+    let depthMax = n * pow(r, t0);
+    let depthMin = n * pow(r, t1);
 
-    // view-space z interval (camera looks down -Z)
-    let zmin = -d1;
-    let zmax = -d0;
+    let zMin = -depthMin;
+    let zMax = -depthMax;
 
-    // XY AABB over [d0,d1]
-    let aabbXY = clusterAABB_view_log(idxX, idxY, d0, d1);
+    let aabbXY = clusterAABB_view_log(idxX, idxY, depthMax, depthMin);
 
-    // flat index for outputs (unchanged buffers/layout)
-    let flat = (idxZ * tileY + idxY) * tileX + idxX;
+    let outIdx = (idxZ * tileY + idxY) * tileX + idxX;
 
-    let base  = flat * params.maxLightsPerCluster;
+    let base  = outIdx * params.maxLightsPerCluster;
     var count : u32 = 0u;
-
     let lightRad = 20.0;
     for (var i = 0u; i < lightSet.numLights; i = i + 1u) {
         let P = vec4f(lightSet.lights[i].pos, 1.0);
         let Pvs = (uCamera.viewMat * P).xyz;
-        if (sphereAABB_intersect(Pvs, lightRad, aabbXY, zmin, zmax)) {
+        if (sphereAABB_intersect(Pvs, lightRad, aabbXY, zMin, zMax)) {
             if (count < params.maxLightsPerCluster) {
                 clusterIndices[base + count] = i;
                 count = count + 1u;
             }
         }
     }
-    clusterCounts[flat] = count;
+    clusterCounts[outIdx] = count;
 }
