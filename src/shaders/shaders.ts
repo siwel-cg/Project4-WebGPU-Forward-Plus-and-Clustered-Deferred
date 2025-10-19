@@ -29,20 +29,37 @@ export const constants = {
     bindGroup_material: 2,
 
     moveLightsWorkgroupSize: 128,
+    clusterWorkgroupSize: 1,
 
     lightRadius: 2
 };
 
 // =================================
 
-function evalShaderRaw(raw: string) {
-    return eval('`' + raw.replaceAll('${', '${constants.') + '`');
+// function evalShaderRaw(raw: string) {
+//     return eval('`' + raw.replaceAll('${', '${constants.') + '`');
+// }
+
+// const commonSrc: string = evalShaderRaw(commonRaw);
+
+// function processShaderRaw(raw: string) {
+//     return commonSrc + evalShaderRaw(raw);
+// }
+
+const RE_CONST = /\$\{\s*(?:constants\.)?([A-Za-z_]\w*)\s*\}/g;
+function substituteConstants(raw: string): string {
+  return raw.replace(RE_CONST, (_m, key) => {
+    const val = (constants as Record<string, unknown>)[key];
+    if (val === undefined) {
+      throw new Error(`Shader constant "${key}" not found in constants`);
+    }
+    return String(val);
+  });
 }
 
-const commonSrc: string = evalShaderRaw(commonRaw);
-
+const commonSrc: string = substituteConstants(commonRaw);
 function processShaderRaw(raw: string) {
-    return commonSrc + evalShaderRaw(raw);
+  return commonSrc + substituteConstants(raw);
 }
 
 export const naiveVertSrc: string = processShaderRaw(naiveVertRaw);
