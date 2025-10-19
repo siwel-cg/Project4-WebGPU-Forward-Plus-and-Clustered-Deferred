@@ -3,7 +3,7 @@ WebGL Forward+ and Clustered Deferred Shading
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 4**
 
-* (TODO) YOUR NAME HERE
+* Lewis Ghrist
 * Tested on: (TODO) **Google Chrome 222.2** on
   Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
 
@@ -30,3 +30,5 @@ to implementation work. Complete the implementation early to leave time!
 - [dat.GUI](https://github.com/dataarts/dat.gui)
 - [stats.js](https://github.com/mrdoob/stats.js)
 - [wgpu-matrix](https://github.com/greggman/wgpu-matrix)
+- [Coordinate-Systems](https://learnopengl.com/Getting-started/Coordinate-Systems)
+- [depth](https://matthewmacfarquhar.medium.com/webgpu-rendering-part-3-depth-testing-39d4c9ae5bbd)

@@ -17,7 +17,7 @@ struct VertexInput
 
 struct VertexOutput
 {
-    @builtin(position) clipPos: vec4f,
+    @builtin(position) fragCoord: vec4f,
     @location(0) pos: vec3f,
     @location(1) nor: vec3f,
     @location(2) uv: vec2f,
@@ -31,10 +31,12 @@ fn main(in: VertexInput) -> VertexOutput
     let modelPos = modelMat * vec4(in.pos, 1);
 
     var out: VertexOutput;
-    out.clipPos = uCamera.viewProjMat * modelPos; // TODO-1.3: replace ??? with the view proj mat from your CameraUniforms uniform variable
+    out.fragCoord = uCamera.viewProjMat * modelPos; // TODO-1.3: replace ??? with the view proj mat from your CameraUniforms uniform variable
     out.pos = modelPos.xyz / modelPos.w;
     out.nor = in.nor;
     out.uv = in.uv;
+
+    let test = uCamera.viewMat * modelPos;
 
     out.nearPlane = uCamera.nearFar.x;
     out.farPlane = uCamera.nearFar.y;

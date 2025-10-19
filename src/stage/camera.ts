@@ -3,7 +3,7 @@ import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer(32 * 4);
+    readonly buffer = new ArrayBuffer(36 * 4);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
@@ -13,10 +13,17 @@ class CameraUniforms {
         }
     }
 
+    private readonly view = new Float32Array(this.buffer);
+    set viewMat(mat: Float32Array) {
+        for (let index = 0; index < this.view.length; index++) {
+            this.view[index+16] = mat[index];
+        }
+    }
+
     private readonly f32 = new Float32Array(this.buffer);
     set nearFar(nf: Float32Array) {
-        this.f32[16] = nf[0];              // near
-        this.f32[17] = nf[1];              // far
+        this.f32[32] = nf[0];              // near
+        this.f32[33] = nf[1];              // far
     } 
 
     // TODO-2: add extra functions to set values needed for light clustering here
@@ -147,7 +154,7 @@ export class Camera {
         // TODO-1.1: set `this.uniforms.viewProjMat` to the newly calculated view proj mat
 
         this.uniforms.viewProjMat = viewProjMat;
-
+        this.uniforms.viewMat = viewMat;
 
         const nfPlanes = vec2.create(Camera.nearPlane, Camera.farPlane);
         this.uniforms.nearFar = nfPlanes;
